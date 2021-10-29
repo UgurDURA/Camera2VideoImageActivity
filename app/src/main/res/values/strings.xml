@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Camera2VideoImageActivity</string>
+    <string name="videocapture">VideoCapture</string>
+    <string name="imagecapture">ImageCapture</string>
 </resources>
