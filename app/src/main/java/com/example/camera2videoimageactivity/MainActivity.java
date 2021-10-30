@@ -9,6 +9,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Camera;
+import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -26,6 +27,8 @@ import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -119,6 +122,9 @@ public class MainActivity extends AppCompatActivity {
     private String mCameraID;
     private Size mPreviewSize;
     private CaptureRequest.Builder mCaptureRequestBuilder;
+    private Button mRecordImageButton;
+    private boolean mIRecording = false;
+
 
 
     private static SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -139,6 +145,25 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mTextureView = (TextureView) findViewById(R.id.textureView);
+        mRecordImageButton = (Button) findViewById(R.id.videoCapture);
+        mRecordImageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(mIRecording)
+                {
+                    mIRecording = false;
+                    mRecordImageButton.setBackgroundColor(Color.GREEN);
+
+
+                }
+                else
+                {
+                    mIRecording = true;
+                    mRecordImageButton.setBackgroundColor(Color.RED);
+                }
+
+            }
+        });
 
     }
 
