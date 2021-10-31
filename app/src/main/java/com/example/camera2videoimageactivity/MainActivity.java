@@ -20,6 +20,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Size;
@@ -31,17 +32,23 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.IOError;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
 
     private static final int REQUEST_CAMERA_PERMISSION_RESULT = 0;
+    private static final int REQUEST_EXTERNAL_STORAGE_PERMISSION_REQUEST = 1;
     private TextureView mTextureView;
     private TextureView.SurfaceTextureListener mSurfaceTextureListener = new TextureView.SurfaceTextureListener() {
         @Override
@@ -125,6 +132,12 @@ public class MainActivity extends AppCompatActivity {
     private Button mRecordImageButton;
     private boolean mIRecording = false;
 
+    private File mVideoFolder;
+    private String mVideoFileName;
+
+
+
+
 
 
     private static SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -144,6 +157,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        createVideoFolder();
+
         mTextureView = (TextureView) findViewById(R.id.textureView);
         mRecordImageButton = (Button) findViewById(R.id.videoCapture);
         mRecordImageButton.setOnClickListener(new View.OnClickListener() {
@@ -158,8 +173,12 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else
                 {
-                    mIRecording = true;
-                    mRecordImageButton.setBackgroundColor(Color.RED);
+                    try {
+                        checkWriteStoragePermission();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 }
 
             }
@@ -195,6 +214,27 @@ public class MainActivity extends AppCompatActivity {
             {
                 Toast.makeText(getApplicationContext(), "Application will not run without camera services", Toast.LENGTH_SHORT).show();
 
+            }
+        }
+        if(requestCode == REQUEST_EXTERNAL_STORAGE_PERMISSION_REQUEST)
+        {
+            if(grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            {
+                mIRecording = true;
+                mRecordImageButton.setBackgroundColor(Color.RED);
+                try {
+                    createVideoFileName();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                Toast.makeText(this, "Write Permission successfully granted !",Toast.LENGTH_SHORT).show();
+
+
+            }
+            else
+            {
+                Toast.makeText(this, "App needs to save video to run this app", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -374,4 +414,64 @@ public class MainActivity extends AppCompatActivity {
         deviceOrientation = ORIENTATIONS.get(deviceOrientation);
         return (sensorOrientation + deviceOrientation + 360) % 360;
     }
+
+    private void createVideoFolder()
+    {
+        File movieFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
+        mVideoFolder = new File(movieFile,"MicrosPhoneImage");
+        if(!mVideoFolder.exists())
+        {
+            mVideoFolder.mkdirs();
+        }
+    }
+
+    private File createVideoFileName() throws IOException
+    {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String prepend = "VIDEO_"+ timestamp + "_";
+        File videoFile = File.createTempFile(prepend, ".mp4", mVideoFolder);
+        mVideoFileName = videoFile.getAbsolutePath();
+        return videoFile;
+
+    }
+
+    private void checkWriteStoragePermission() throws IOException {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+        {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            {
+                mIRecording = true;
+                mRecordImageButton.setBackgroundColor(Color.RED);
+                try {
+                    createVideoFileName();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+
+            }
+            else
+
+                {
+
+                if(shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE));
+                {
+                    Toast.makeText(this, "App need to be able to save videos", Toast.LENGTH_SHORT).show();
+                }
+                requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_EXTERNAL_STORAGE_PERMISSION_REQUEST);
+
+            }
+
+        }
+        else
+        {
+            mIRecording = true;
+            mRecordImageButton.setBackgroundColor(Color.RED);
+            createVideoFileName();
+
+        }
+
+
+        }
 }
